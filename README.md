@@ -622,7 +622,7 @@ Internet
 | Number of AZs | `2` |
 | Number of public subnets | `2` |
 | Number of private subnets | `2` |
-| NAT gateways | `None` (hemat biaya) |
+| NAT gateways | `In 1 AZ` |
 | VPC endpoints | `None` |
 
 4. Klik **Create VPC**
@@ -642,7 +642,7 @@ Internet
 | Type | Source |
 |---|---|
 | SSH | Your IP/32 |
-| HTTP | `0.0.0.0/0` |
+| HTTP | `0.0.0.0/0` nanti di ganti pakai SG ALB |
 
 **SG untuk RDS:**
 
@@ -671,7 +671,7 @@ Internet
 **A. RDS Primary:**
 
 1. **RDS Console** → **Create database**
-2. Standard create → MySQL → Engine: MySQL 8.0 → Template: Free tier
+2. Standard create → MySQL → Engine: MySQL 8.0 → Production → Single AZ
 3. Konfigurasi:
 
 | Field | Nilai |
@@ -707,9 +707,9 @@ Internet
 | Field | Nilai |
 |---|---|
 | Name | `hotel-web-1` (ulangi untuk `-2`, `-3`, `-4`) |
-| AMI | Debian 12 (HVM, free tier eligible) |
+| AMI | Debian 13 |
 | Instance type | `t2.micro` |
-| Key pair | Create new → `hotel-key` → simpan `.pem` di `C:\lomba-cloud-hotel\` |
+| Key pair | Create new → `hotel-key` → simpan `.pem` di `C:\Users\Andhika\Downloads\lomba-cloud-hotel` |
 | VPC | `hotel-vpc` |
 | Subnet | public subnet (gunakan AZ berbeda tiap instance) |
 | Auto-assign public IP | **Enable** |
@@ -745,19 +745,7 @@ usermod -aG docker admin
 
 > ⏱️ ~5 menit
 
-1. **EC2 Console** → **Load Balancers** → **Create** → pilih **Application Load Balancer**
-2. Konfigurasi:
-
-| Field | Nilai |
-|---|---|
-| Name | `hotel-alb` |
-| Scheme | `Internet-facing` |
-| VPC | `hotel-vpc` |
-| Mappings | Pilih kedua public subnet |
-| Security group | `hotel-web-sg` |
-| Listener | `HTTP:80` |
-
-3. **Target group** → Create new:
+1. **Target group** → Create new:
 
 | Field | Nilai |
 |---|---|
@@ -768,6 +756,29 @@ usermod -aG docker admin
 | Unhealthy threshold | `2` |
 | Timeout | `5` |
 | Interval | `10` |
+
+Langkah-langkah Aktifkan Sticky Session:
+Buka AWS Console → EC2 → Target Groups.
+Pilih target group hotel-tg.
+Tab Attributes → klik Edit.
+Pada bagian Stickiness:
+Aktifkan Stickiness.
+Stickiness type: pilih Load balancer generated cookie.
+Duration: biarkan default (1 day) atau sesuaikan.
+Klik Save changes.
+
+2. **EC2 Console** → **Load Balancers** → **Create** → pilih **Application Load Balancer** 
+
+3. Konfigurasi:
+
+| Field | Nilai |
+|---|---|
+| Name | `hotel-alb` |
+| Scheme | `Internet-facing` |
+| VPC | `hotel-vpc` |
+| Mappings | Pilih kedua public subnet |
+| Security group | `hotel-web-sg` |
+| Listener | `HTTP:80` |
 
 4. Register targets: pilih keempat EC2 (setelah siap) → **Create**
 
@@ -799,7 +810,6 @@ SELECT * FROM guests;
 SELECT * FROM admin_users;
 EXIT;
 ```
-
 ---
 
 ## Langkah 7: Upload Kode ke EC2 via SCP
@@ -855,6 +865,26 @@ Verifikasi:
 sudo docker ps
 curl http://localhost/health.php
 # Diharapkan: {"status":"healthy","timestamp":"..."}
+```
+
+```bash
+docker exec -it guestbook-app php -r "echo password_hash('admin123', PASSWORD_BCRYPT) . PHP_EOL;"
+```
+
+```bash
+mysql -h hotel-primary.xxxxxx.ap-southeast-1.rds.amazonaws.com -u admin -p
+```
+
+```sql
+USE grand_andhika_hotel;
+
+DELETE FROM admin_users WHERE username = 'admin';
+
+INSERT INTO admin_users (username, password) VALUES 
+('admin', 'HASH_DARI_LANGKAH_1');
+
+SELECT * FROM admin_users;
+EXIT;
 ```
 
 ---
@@ -922,6 +952,9 @@ mysql -h hotel-primary.ctuiwuks6p5s.ap-southeast-1.rds.amazonaws.com \
 ### ❌ Password admin bermasalah
 
 Connect ke MySQL, jalankan:
+```bash
+mysql -h hotel-primary.xxxxxx.ap-southeast-1.rds.amazonaws.com -u admin -p
+```
 
 ```sql
 USE grand_andhika_hotel;
