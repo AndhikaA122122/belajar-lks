@@ -1172,6 +1172,12 @@ SELECT * FROM admin_users;
 EXIT;
 ```
 
+```sql
+CREATE USER 'appuser'@'%' IDENTIFIED BY 'AppHotel2026!';
+GRANT ALL PRIVILEGES ON grand_andhika_hotel.* TO 'appuser'@'%';
+FLUSH PRIVILEGES;
+```
+
 ---
 
 ## FASE 4: Testing dan Finalisasi
