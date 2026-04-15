@@ -938,6 +938,12 @@ sudo docker stop guestbook-app
 sudo docker start guestbook-app
 ```
 
+**testing apakah database tersimpan atau tidak di rds**
+```sql
+USE grand_andhika_hotel;
+SELECT * FROM guests ORDER BY created_at DESC LIMIT 5;
+```
+
 ---
 
 ## 🔧 Troubleshoot
