@@ -1002,6 +1002,7 @@ Internet
 | Auto-assign public IP | **Enable** |
 | Security group | `hotel-web-sg` |
 | Storage | `20 GB gp3` |
+| Allow SSH traffic from | `My IP`
 
 3. **Advanced** → **User data**, paste script berikut:
 
